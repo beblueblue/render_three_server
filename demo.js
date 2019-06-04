@@ -19,169 +19,56 @@ const gl = require('gl')(WIDTH, HEIGHT, {
 });
 
 
-const outPath = './src/common/img/output/out.png';
+const outPath = './src/common/img/output/outDemo.png';
+const textureImgUrl = './src/common/img/texture/turtle.png';
 const backgroundImg = './src/common/img/background-demo.png';
 let URIOfImg = {};
-const png = new PNG({ width: WIDTH, height: HEIGHT });
+// const png = new PNG({ width: WIDTH, height: HEIGHT });
 
 global.document = document;
 
+render = (dataTexture) =>{
+    // Parameters (the missing one is the camera position, see below)
+    const width = 600
+    const height = 400
+    const path = outPath
+    const png = new PNG({ width: width, height: height })
+    
+    // THREE.js business starts here
+    let scene = new THREE.Scene() 
 
-// 渲染器变量
-// 观察距离（待研究）
-const viewPositionY = -1300;
-const viewPositionX = 0;
-const viewPositionZ = 0;
-// renderer构建
-let renderer;
-function initRenderer() {
+    // camera attributes
+    const VIEW_ANGLE = 45
+    const ASPECT = width / height
+    const NEAR = 0.1
+    const FAR  = 100
+
+    // set up camera
+    let camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR)
+
+    scene.add(camera)
+    camera.position.set(0, 2, 2)
+    camera.lookAt(scene.position)
+
+    // The width / height we set here doesn't matter
     renderer = new THREE.WebGLRenderer({
         antialias: true,
-        canvas: canvas,
-        preserveDrawingBuffer: true,
-        context: gl
-    });
-}
-// 相机构建
-let camera;
-function initCamera() {
-    camera = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, 0.1, 10000);
-    // camera.position.x = 500;
-    // camera.position.y = 500;
-    camera.position.z = 1200;
-}
-// 场景构建
-let scene;
-function initScene() {
-    scene = new THREE.Scene();
-}
-// 光源构建
-let lights = [];
-function initLight() {
-  //光源1为环境光
-  let ambientLight = new THREE.AmbientLight( 0xeeeeee, 0.8 );
-  //光源2为点光源
-  let pointLight = new THREE.PointLight( 0xffffff, 0.3 );
-  pointLight.position.set( 2000, 2000, 0);
-  lights.push(ambientLight, pointLight);
-  scene.add(ambientLight);
-  scene.add(pointLight);
-}
-// 初始化辅助线和背景图
-function initDebug() {
-  //模型辅助线
-  let axisHelper = new THREE.AxesHelper(500);
-  
-  //给场景添加天空盒子纹理
-  let cubeTextureLoader = new THREE.CubeTextureLoader();
-  cubeTextureLoader.setPath( './src/common/img/textures/' );
-  //六张图片分别是朝前的（posz）、朝后的（negz）、朝上的（posy）、朝下的（negy）、朝右的（posx）和朝左的（negx）。
-  let cubeTexture = cubeTextureLoader.load( [
-      'right.jpg', 'left.jpg',
-      'top.jpg', 'bottom.jpg',
-      'front.jpg', 'back.jpg'
-  ] );
-
-  scene.add(axisHelper);
-  scene.background = cubeTexture;
-}
-// 初始化模型（带纹理）
-function initObject() {
-    let onProgress;
-    let onError;
-    let manager;
-    let textureLoader;
-    let texture;
-    let loader;
-
-    let imgUrl = path.resolve(__dirname, backgroundImg);
-    let textureImgDom = new JSDOM(`<img src="${imgUrl}">`, {includeNodeLocations: true, resources: "usable"});
-    let textureImg = textureImgDom.window.document.querySelector('img');
-
-    // model载入过程监控
-    onProgress = function ( xhr ) {
-        if ( xhr.lengthComputable ) {
-            var percentComplete = xhr.loaded / xhr.total * 100;
-            console.log( Math.round(percentComplete, 2) + '% downloaded' );
-        }
-    };
-    // model载入失败监控
-    onError = function ( xhr ) {
-        console.log('model:' + xhr + '引入失败');
-    };
-    manager = new THREE.LoadingManager();
-    manager.onProgress = function ( url, loaded, total ) {
-        console.log(url, loaded, total);
-    };
-
-    // texture载入，在node中利用Data URI格式来载入图片纹理
-    // three.js中TextureLoader载入的图片纹理，都调用了DOM中的<img>对象，在node中不适用。
-    // 解决思路一：search node中实现img对象的中间件
-    // 解决思路二：利用自定义纹理材质来变形导入图片纹理，见模型的load
-    // textureLoader = new THREE.TextureLoader( manager );
-    console.log(textureImg);
-    texture = new THREE.Texture(textureImg);
-
-    // URIOfImg.data = fs.readFileSync(backgroundImg);
-    // URIOfImg.URI = 'data:image/png;base43,' + URIOfImg.data.toString('base64');
-    // texture = textureLoader.load( URIOfImg.URI );
-
-    // 模型导入
-    loader = new JSONLoader( manager );
-    loader.load( './src/common/models/textureObj2.js', function ( geometry, materials ) {
-        // console.log(geometry)
-        // console.log(materials)
-        let meshObj = new THREE.Mesh( geometry, materials );
-        meshObj.traverse( function ( child ) {
-            // 利用自定义纹理材质来载入图片纹理
-
-            if ( child instanceof THREE.Mesh ) {
-                // 设置纹理映射
-                console.log(texture);
-                // child.material[0].map = texture;
-                child.material[0].side = THREE.DoubleSide;
-                child.material[0].transparent = true;
-                // initShaerMatriel(backgroundImg, child, meshObj);
-            }
-        });
-        meshObj.position.y = viewPositionY;
-        meshObj.position.x = viewPositionX;
-        meshObj.position.z = viewPositionZ;
-        scene.add( meshObj );
-        render();
-    }, onProgress, onError );
-}
-
-// 渲染调用
-function render() {
-    // Let's create a render target object where we'll be rendering
-    let rtTexture = new THREE.WebGLRenderTarget(
-        WIDTH, HEIGHT, {
-            minFilter: THREE.LinearFilter,
-            magFilter: THREE.NearestFilter,
-            format: THREE.RGBAFormat
+        width: 0,
+        height: 0,
+        canvas: canvas, // This parameter is usually not specified
+        context: gl     // Use the headless-gl context for drawing offscreen
     })
-    renderer.setRenderTarget(rtTexture);
-    renderer.render(scene, camera);
-    exportImg();
-}
-// 初始化动作
-function init(debug){
-    // 必须先初始化场景
-    initScene();
-    initRenderer();
-    initCamera();
-    if (debug) {
-      initDebug();
-    }
-    initLight();
-    initObject();
-}
-// 构建自定义着色器材质
-function initShaerMatriel(path, child, meshObj) {
-    let material = new THREE.ShaderMaterial();
-    let dataTexture;
-    let curPng = new PNG();
+
+    // add some geometry
+    let geometry = new THREE.BoxGeometry( 1, 1, 1 )
+
+    // add a material; it has to be a ShaderMaterial with custom shaders for now 
+    // this is a work in progress, some related link / issues / discussions
+    //
+    // https://github.com/stackgl/headless-gl/issues/26
+    // https://github.com/mrdoob/three.js/pull/7136
+    // https://github.com/mrdoob/three.js/issues/7085
+    let material = new THREE.ShaderMaterial()
 
     material.vertexShader = `
         varying vec2 vUv;
@@ -190,36 +77,34 @@ function initShaerMatriel(path, child, meshObj) {
             vUv = uv;
             gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
         }
-    `;
+    `
     material.fragmentShader = `
         uniform sampler2D dataTexture;
         varying vec2 vUv;
         void main() {
             gl_FragColor = texture2D(dataTexture, vUv);
         }
-    `;
-    // material.lights = true;
+    `
+    material.uniforms = {
+        dataTexture: { type: "t", value: dataTexture }
+    }
 
-    fs.createReadStream(path)
-        .pipe(curPng)
-        .on('parsed', () => {
-            let width = curPng.width;
-            let height = curPng.height;
-            let data = curPng.data;
-            
-            dataTexture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat);
-            dataTexture.needUpdate = true;
-            material.uniforms = {
-                dataTexture: { type: "t", value: dataTexture }
-            }
-            child.material[0] =  material;
-            scene.add( meshObj );
-            render();
-            console.log('parsed', width, height);
-        });
-}
-// 导出图片
-function exportImg(){
+    // Create the mesh and add it to the scene
+    let cube = new THREE.Mesh(geometry, material)
+    scene.add(cube)
+
+    // Let's create a render target object where we'll be rendering
+    let rtTexture = new THREE.WebGLRenderTarget(
+        width, height, {
+            minFilter: THREE.LinearFilter,
+            magFilter: THREE.NearestFilter,
+            format: THREE.RGBAFormat
+    })
+
+    // render
+    renderer.setRenderTarget(rtTexture);
+    renderer.render(scene, camera)
+    // read render texture into buffer
     let newGl = renderer.getContext()
 
     let pixels = new Uint8Array(4 * WIDTH * HEIGHT)
@@ -248,11 +133,24 @@ function exportImg(){
     stream.on('close', () =>
         console.log("Image written: #{ outPath }")
     )
-    const endTime = Number(new Date());
-    console.log(endTime - startTime)
 }
 
+var png = new PNG()
+var stream = fs.createReadStream(textureImgUrl)
+stream.pipe(png)
 
-init();
+png.on('parsed', () => {
 
+    console.log('parsed !', width, height)
 
+    var width  = png.width
+    var height = png.height
+    var data   = png.data
+
+    // console.log(typeof(pixels)) 
+    dataTexture = new THREE.DataTexture(data, width, height,
+                                        THREE.RGBAFormat )
+    dataTexture.needsUpdate = true
+
+    render(dataTexture);
+})
