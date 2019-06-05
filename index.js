@@ -14,7 +14,6 @@ const fs = require('fs');
 const path = require('path');
 const THREE = require('three');
 const JSONLoader = require('./src/common/loaders/JSONLoader');
-const TextureLoader = require('./src/common/loaders/TextureLoader');
 const PNG = require('pngjs').PNG;
 const gl = require('gl')(WIDTH, HEIGHT, {
     preserveDrawingBuffer: true,
