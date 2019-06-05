@@ -1,6 +1,6 @@
 const startTime = Number(new Date());
-const WIDTH = 2048;
-const HEIGHT = 2048;
+const WIDTH = 1024;
+const HEIGHT = 1024;
 
 const { JSDOM } = require("jsdom");
 const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>', {
@@ -23,7 +23,7 @@ const gl = require('gl')(WIDTH, HEIGHT, {
 
 const outPath = './src/common/img/output/out.png';
 const backgroundImg = './src/common/img/background-demo.png';
-let URIOfImg = {};
+const modelPath = './src/common/models/textureObj2.js';
 const png = new PNG({ width: WIDTH, height: HEIGHT });
 
 global.document = document;
@@ -88,30 +88,12 @@ function initDebug() {
   scene.background = cubeTexture;
 }
 // 初始化模型（带纹理）
+let meshObj;
+let texture;
 function initObject() {
-    let onProgress;
-    let onError;
-    let manager;
-    let textureLoader;
-    let texture;
     let loader;
     let curPng = new PNG();
-
-    // model载入过程监控
-    onProgress = function ( xhr ) {
-        if ( xhr.lengthComputable ) {
-            var percentComplete = xhr.loaded / xhr.total * 100;
-            console.log( Math.round(percentComplete, 2) + '% downloaded' );
-        }
-    };
-    // model载入失败监控
-    onError = function ( xhr ) {
-        console.log('model:' + xhr + '引入失败');
-    };
-    manager = new THREE.LoadingManager();
-    manager.onProgress = function ( url, loaded, total ) {
-        console.log(url, loaded, total);
-    };
+    let loaderNum = 0;
 
     // texture载入，在node中利用Data URI格式来载入图片纹理
     // three.js中TextureLoader载入的图片纹理，都调用了DOM中的<img>对象，在node中不适用。
@@ -119,6 +101,7 @@ function initObject() {
     // 解决思路二：利用自定义纹理材质来变形导入图片纹理，见模型的load
 
     // 获得突破，通过DataTexture来导入纹理图片
+    loaderNum++;
     fs.createReadStream(backgroundImg)
         .pipe(curPng)
         .on('parsed', () => {
@@ -131,30 +114,26 @@ function initObject() {
             texture.flipY = true;
             texture.unpackAlignment = 4;
             texture.needsUpdate = true;
-            console.log(`parsed, ${backgroundImg}`)
+            console.log(`parsed: ${backgroundImg}`)
+
+            loaderNum--;
+            if(loaderNum === 0){
+                render();
+            }
         });
 
     // 模型导入
-    loader = new JSONLoader( manager );
-    loader.load( './src/common/models/textureObj2.js', function ( geometry, materials ) {
-        // console.log(geometry)
-        // console.log(materials)
-        let meshObj = new THREE.Mesh( geometry, materials );
-        meshObj.traverse( function ( child ) {
-            if ( child instanceof THREE.Mesh ) {
-                // 设置纹理映射
-                child.material[0].map = texture;
-                child.material[0].side = THREE.DoubleSide;
-                child.material[0].transparent = true;
-                console.log('mesh, finised')
-            }
-        });
-        meshObj.position.y = viewPositionY;
-        meshObj.position.x = viewPositionX;
-        meshObj.position.z = viewPositionZ;
-        scene.add( meshObj );
-        render();
-    }, onProgress, onError );
+    loader = new JSONLoader( );
+    loaderNum++;
+    loader.load( modelPath, function ( geometry, materials ) {
+        meshObj = new THREE.Mesh( geometry, materials );
+        console.log(`loaded: ${modelPath}`)
+
+        loaderNum--;
+        if(loaderNum === 0){
+            render();
+        }
+    });
 }
 
 // 渲染调用
@@ -166,6 +145,19 @@ function render() {
             magFilter: THREE.NearestFilter,
             format: THREE.RGBAFormat
     })
+    meshObj.traverse( function ( child ) {
+        if ( child instanceof THREE.Mesh ) {
+            // 设置纹理映射
+            child.material[0].map = texture;
+            child.material[0].side = THREE.DoubleSide;
+            child.material[0].transparent = true;
+            console.log('mesh, finised')
+        }
+    });
+    meshObj.position.y = viewPositionY;
+    meshObj.position.x = viewPositionX;
+    meshObj.position.z = viewPositionZ;
+    scene.add( meshObj );
     renderer.setRenderTarget(rtTexture);
     renderer.render(scene, camera);
     exportImg();
@@ -181,53 +173,6 @@ function init(debug){
     }
     initLight();
     initObject();
-}
-// 构建自定义着色器材质
-function initShaerMatriel(path, geometry) {
-    let material = new THREE.ShaderMaterial();
-    let dataTexture;
-    let meshObj;
-    let curPng = new PNG();
-
-    material.vertexShader = `
-        varying vec2 vUv;
-        
-        void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-        }
-    `;
-    material.fragmentShader = `
-        uniform sampler2D dataTexture;
-        varying vec2 vUv;
-        void main() {
-            gl_FragColor = texture2D(dataTexture, vUv);
-        }
-    `;
-    // material.lights = true;
-
-    fs.createReadStream(path)
-        .pipe(curPng)
-        .on('parsed', () => {
-            let width = curPng.width;
-            let height = curPng.height;
-            let data = curPng.data;
-            
-            dataTexture = new THREE.DataTexture(data, width, height, THREE.RGBFormat);
-            dataTexture.needUpdate = true;
-            material.uniforms = {
-                dataTexture: { type: "t", value: dataTexture }
-            }
-            // meshObj = new THREE.Mesh(geometry, material);
-            meshObj = new THREE.Mesh(geometry);
-            meshObj.position.y = viewPositionY;
-            meshObj.position.x = viewPositionX;
-            meshObj.position.z = viewPositionZ;
-            console.log(data, width, height);
-            scene.add( meshObj );
-            render();
-            console.log('parsed', width, height);
-        });
 }
 // 导出图片
 function exportImg(){
@@ -256,11 +201,12 @@ function exportImg(){
     let stream = fs.createWriteStream(outPath)
     png.pack().pipe(stream)
 
-    stream.on('close', () =>
+    stream.on('close', () => {
+        const endTime = Number(new Date());
         console.log(`mage written: ${ outPath }`)
+        console.log(`The process execute: ${endTime - startTime}ms`)
+    }
     )
-    const endTime = Number(new Date());
-    console.log(endTime - startTime)
 }
 
 init();
