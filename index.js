@@ -1,9 +1,11 @@
 const startTime = Number(new Date());
-const WIDTH = 1200;
-const HEIGHT = 1200;
+const WIDTH = 2048;
+const HEIGHT = 2048;
 
 const { JSDOM } = require("jsdom");
-const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>');
+const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>', {
+    resources: 'usable'
+});
 const window = dom.window;
 const document = window.document;
 const canvas = document.createElement('canvas');
@@ -12,6 +14,7 @@ const fs = require('fs');
 const path = require('path');
 const THREE = require('three');
 const JSONLoader = require('./src/common/loaders/JSONLoader');
+const TextureLoader = require('./src/common/loaders/TextureLoader');
 const PNG = require('pngjs').PNG;
 const gl = require('gl')(WIDTH, HEIGHT, {
     preserveDrawingBuffer: true,
@@ -25,7 +28,7 @@ let URIOfImg = {};
 const png = new PNG({ width: WIDTH, height: HEIGHT });
 
 global.document = document;
-
+global.window = window;
 
 // 渲染器变量
 // 观察距离（待研究）
@@ -93,10 +96,7 @@ function initObject() {
     let textureLoader;
     let texture;
     let loader;
-
-    let imgUrl = path.resolve(__dirname, backgroundImg);
-    let textureImgDom = new JSDOM(`<img src="${imgUrl}">`, {includeNodeLocations: true, resources: "usable"});
-    let textureImg = textureImgDom.window.document.querySelector('img');
+    let curPng = new PNG();
 
     // model载入过程监控
     onProgress = function ( xhr ) {
@@ -118,13 +118,22 @@ function initObject() {
     // three.js中TextureLoader载入的图片纹理，都调用了DOM中的<img>对象，在node中不适用。
     // 解决思路一：search node中实现img对象的中间件
     // 解决思路二：利用自定义纹理材质来变形导入图片纹理，见模型的load
-    // textureLoader = new THREE.TextureLoader( manager );
-    console.log(textureImg);
-    texture = new THREE.Texture(textureImg);
 
-    // URIOfImg.data = fs.readFileSync(backgroundImg);
-    // URIOfImg.URI = 'data:image/png;base43,' + URIOfImg.data.toString('base64');
-    // texture = textureLoader.load( URIOfImg.URI );
+    // 获得突破，通过DataTexture来导入纹理图片
+    fs.createReadStream(backgroundImg)
+        .pipe(curPng)
+        .on('parsed', () => {
+            let width = curPng.width;
+            let height = curPng.height;
+            let data = curPng.data;
+            
+            texture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat);
+            texture.generateMipmaps = true;
+            texture.flipY = true;
+            texture.unpackAlignment = 4;
+            texture.needsUpdate = true;
+            console.log(`parsed, ${backgroundImg}`)
+        });
 
     // 模型导入
     loader = new JSONLoader( manager );
@@ -133,15 +142,12 @@ function initObject() {
         // console.log(materials)
         let meshObj = new THREE.Mesh( geometry, materials );
         meshObj.traverse( function ( child ) {
-            // 利用自定义纹理材质来载入图片纹理
-
             if ( child instanceof THREE.Mesh ) {
                 // 设置纹理映射
-                console.log(texture);
-                // child.material[0].map = texture;
+                child.material[0].map = texture;
                 child.material[0].side = THREE.DoubleSide;
                 child.material[0].transparent = true;
-                // initShaerMatriel(backgroundImg, child, meshObj);
+                console.log('mesh, finised')
             }
         });
         meshObj.position.y = viewPositionY;
@@ -178,9 +184,10 @@ function init(debug){
     initObject();
 }
 // 构建自定义着色器材质
-function initShaerMatriel(path, child, meshObj) {
+function initShaerMatriel(path, geometry) {
     let material = new THREE.ShaderMaterial();
     let dataTexture;
+    let meshObj;
     let curPng = new PNG();
 
     material.vertexShader = `
@@ -207,12 +214,17 @@ function initShaerMatriel(path, child, meshObj) {
             let height = curPng.height;
             let data = curPng.data;
             
-            dataTexture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat);
+            dataTexture = new THREE.DataTexture(data, width, height, THREE.RGBFormat);
             dataTexture.needUpdate = true;
             material.uniforms = {
                 dataTexture: { type: "t", value: dataTexture }
             }
-            child.material[0] =  material;
+            // meshObj = new THREE.Mesh(geometry, material);
+            meshObj = new THREE.Mesh(geometry);
+            meshObj.position.y = viewPositionY;
+            meshObj.position.x = viewPositionX;
+            meshObj.position.z = viewPositionZ;
+            console.log(data, width, height);
             scene.add( meshObj );
             render();
             console.log('parsed', width, height);
@@ -246,13 +258,10 @@ function exportImg(){
     png.pack().pipe(stream)
 
     stream.on('close', () =>
-        console.log("Image written: #{ outPath }")
+        console.log(`mage written: ${ outPath }`)
     )
     const endTime = Number(new Date());
     console.log(endTime - startTime)
 }
 
-
 init();
-
-

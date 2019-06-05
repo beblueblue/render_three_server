@@ -1,6 +1,5 @@
-const startTime = Number(new Date());
 const WIDTH = 1200;
-const HEIGHT = 1200;
+const HEIGHT = 800;
 
 const { JSDOM } = require("jsdom");
 const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>');
@@ -11,7 +10,6 @@ const canvas = document.createElement('canvas');
 const fs = require('fs');
 const path = require('path');
 const THREE = require('three');
-const JSONLoader = require('./src/common/loaders/JSONLoader');
 const PNG = require('pngjs').PNG;
 const gl = require('gl')(WIDTH, HEIGHT, {
     preserveDrawingBuffer: true,
@@ -20,10 +18,7 @@ const gl = require('gl')(WIDTH, HEIGHT, {
 
 
 const outPath = './src/common/img/output/outDemo.png';
-const textureImgUrl = './src/common/img/texture/turtle.png';
-const backgroundImg = './src/common/img/background-demo.png';
-let URIOfImg = {};
-// const png = new PNG({ width: WIDTH, height: HEIGHT });
+const textureImgUrl = path.resolve(__dirname, './src/common/img/textures/turtle.png');
 
 global.document = document;
 
@@ -107,19 +102,19 @@ render = (dataTexture) =>{
     // read render texture into buffer
     let newGl = renderer.getContext()
 
-    let pixels = new Uint8Array(4 * WIDTH * HEIGHT)
+    let pixels = new Uint8Array(4 * width * height)
 
-    newGl.readPixels(0, 0, WIDTH, HEIGHT, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
+    newGl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
 
-    for(let j = 0; j < HEIGHT; j++){
-        for(let i = 0; i < WIDTH; i++){
-            const k = j * WIDTH + i
+    for(let j = 0; j < height; j++){
+        for(let i = 0; i < width; i++){
+            const k = j * width + i
             const r = pixels[4*k]
             const g = pixels[4*k + 1]
             const b = pixels[4*k + 2]
             const a = pixels[4*k + 3]
 
-            const m = (HEIGHT - j + 1) * WIDTH + i
+            const m = (height - j + 1) * width + i
             png.data[4*m]     = r
             png.data[4*m + 1] = g
             png.data[4*m + 2] = b
@@ -127,11 +122,11 @@ render = (dataTexture) =>{
         }
     }
 
-    let stream = fs.createWriteStream(outPath)
+    let stream = fs.createWriteStream(path)
     png.pack().pipe(stream)
 
     stream.on('close', () =>
-        console.log("Image written: #{ outPath }")
+        console.log(`mage written: ${ path }`)
     )
 }
 
@@ -141,15 +136,15 @@ stream.pipe(png)
 
 png.on('parsed', () => {
 
-    console.log('parsed !', width, height)
-
+    
     var width  = png.width
     var height = png.height
     var data   = png.data
+    console.log('parsed !', width, height)
 
     // console.log(typeof(pixels)) 
     dataTexture = new THREE.DataTexture(data, width, height,
-                                        THREE.RGBAFormat )
+                                        THREE.RGBFormat )
     dataTexture.needsUpdate = true
 
     render(dataTexture);
