@@ -24,7 +24,7 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.js$/,
+                test: /\.(js|jsx)$/,
                 use: [
                     {
                         loader: 'babel-loader',
@@ -104,7 +104,7 @@ module.exports = {
                             loader: 'css-loader',
                             options: {
                                 module: true,
-                                localIdentName: '[name]_[local]_[hash:base64:6]'
+                                localIdentName: '[local]'
                             }
                         },
                         'less-loader',
@@ -158,10 +158,11 @@ module.exports = {
     },
     devServer: {
         open: true,
-        port: 3100,
+        port: 3001,
         contentBase: './src/common/',
         // 服务器所打包资源的输出路径。总是以 "/" 开头，总是以 "/" 结尾
         // 所有资源打包查询的起点
         publicPath: '/',
+        historyApiFallback: true
     }
 };

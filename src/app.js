@@ -1,12 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
+import RouterIndex from './router/index.js';
+
 import 'font-awesome/css/font-awesome.css';
+import './common/style/base.css';
 
 ReactDOM.render(
-    <div>
-        Hello React!
-        <span className="fa fa-rocket"></span>
-    </div>,
+    <RouterIndex />,
     document.getElementById('app')
 );
