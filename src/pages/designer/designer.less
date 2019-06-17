@@ -1,3 +1,39 @@
-.designer-box {
+@import '../../common/style/mixin.less';
+
+@btnWidth: 200px;
+@opeWidth: 300px;
+@totalWidth: @btnWidth + @opeWidth;
+
+.change-btn-box {
     width: 600px;
+}
+.UV-mix-wrap {
+    width: 100vw;
+    .face-config-bar {
+        width: @btnWidth;
+        text-align: center;
+        .design-img-box {
+            width: 160px;
+            height: 160px;
+        }
+    }
+    .show-UV-bar {
+        padding: 20px;
+        height: calc(100vw - @totalWidth);
+        background: #e8e8e8;
+        flex: 1;
+        .set-UV-box {
+            .border-dashed(red);
+            height: 100%;
+            background: #fff;
+            // canvas {
+            //     position: absolute;
+            //     top: 0;
+            //     left: 0;
+            // }
+        }
+    }
+    .oprate-bar {
+        width: @opeWidth;
+    }
 }
