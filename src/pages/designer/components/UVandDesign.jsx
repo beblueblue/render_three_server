@@ -1,112 +1,108 @@
 import React, {Component, useEffect} from 'react';
+import {Vector2, Matrix3} from 'three';
 import PropTypes from 'prop-types';
-import { CubeTexture } from 'three';
 
 export default class UVandDesign extends Component {
     constructor(props) {
         super(props);
+
+        this.state = {
+            selectedImgId: 1,
+
+        };
+
         // 利用createRef获取canvas
         this.UV_design_render = React.createRef();
-        this.draw_design_img = React.createRef();
+        this.UV_design_helper = React.createRef();
         // 获取img对象
-        this.imgs = [];
-
+        this.imgs = {};
         this.needLoadImgNum = 0;
         this.loadedImgNum = 0;
+        this.didRender = false;
+        this.loadAllImgs = false;
+
         this.handelImgLoad = this.handelImgLoad.bind(this);
         this.renderUV = this.renderUV.bind(this);
         this.maskRendUv = this.maskRendUv.bind(this);
-
-        this.didRender = false;
-        this.loadAllImgs = false;
+        
     }
 
     componentDidMount() {
+        console.log('mount')
         this.didRender = true;
         this.maskRendUv();
     }
+    
+    componentWillUnmount() {
+        console.log('unmount')
+    }
 
     componentDidUpdate() {
+        console.log('update')
         this.renderUV();
     }
 
     handelImgLoad(){
+        console.log('load')
         this.loadedImgNum++ ;
         if(this.loadedImgNum === this.needLoadImgNum) {
             this.loadAllImgs = true;
             this.maskRendUv();
         }
     }
-
+    // 图片onload且DOM渲染后，进行canvas绘制
     maskRendUv(){
         if(this.didRender && this.loadAllImgs) {
             this.renderUV();
         }
     }
-
+    /**
+     * 渲染最终的UV映射图
+     * 核心方法是canvas的drawImage()
+     *  */
     renderUV(){
         // 输出纹理图的画布
         let renderCanvas = this.UV_design_render.current;
-        let width = renderCanvas.width;
-        let height = renderCanvas.height;
         let renderContext = renderCanvas.getContext('2d');
-        // 处理单个图片的画布
-        let imgDataCanvas = this.draw_design_img.current;
-        let imgDataContext = imgDataCanvas.getContext('2d');
-        let imgCanvasWidth = imgDataCanvas.width;
-        let imgCanvasHeight = imgDataCanvas.height;
+        const width = renderCanvas.width;
+        const height = renderCanvas.height;
+        // 输出辅助线的画布
+        let helperCanvas = this.UV_design_helper.current;
+        let helperCanvasContex = helperCanvas.getContext('2d');
+        const helperWidth = helperCanvas.width;
+        const helperHeight = helperCanvas.height;
 
         let {faceConfig, UV} = this.props;
         const baseColor = UV.color;
-
-
         
         renderContext.clearRect(0, 0, width, height);
         renderContext.fillStyle = baseColor;
         renderContext.fillRect(0, 0, width, height);
-        this.imgs.map((imgObj, index) => {
-            let config = faceConfig[index];
-            let imgWidth = imgObj.img.naturalWidth;
-            let imgHeight = imgObj.img.naturalHeight;
-            // Pattern填充方案失败！
-            // let pattern = renderContext.createPattern(imgObj.img, 'no-repeat');
-            // let region = new Path2D();
-
-            // region.moveTo(faceConfig[index].destinationPoints.a.x, faceConfig[index].destinationPoints.a.y);
-            // region.lineTo(faceConfig[index].destinationPoints.b.x, faceConfig[index].destinationPoints.b.y);
-            // region.lineTo(faceConfig[index].destinationPoints.c.x, faceConfig[index].destinationPoints.c.y);
-            // region.lineTo(faceConfig[index].destinationPoints.d.x, faceConfig[index].destinationPoints.d.y);
-            // region.closePath();
-
-            // renderContext.fillStyle = pattern;
-            // renderContext.fill(region);
-
-            // 额外canvas处理单个元素方案, bingo!
-            imgDataContext.clearRect(0, 0, width, height);
-            imgDataContext.save();
-            imgDataContext.translate(imgCanvasWidth/2, imgCanvasHeight/2);
-            imgDataContext.rotate(Math.PI / 4);
-            imgDataContext.scale(0.5, 0.5);
-            imgDataContext.translate(-imgCanvasWidth/2, -imgCanvasHeight/2);
-
-            imgDataContext.drawImage(
-                imgObj.img, 
-                (imgCanvasWidth - imgWidth)/2, 
-                (imgCanvasHeight - imgHeight)/2,
-                imgWidth, 
-                imgHeight,
-            );
-            // imgDataContext.transform(1, 0, 0, 1, 0, 0);
-            console.log(imgObj.img, imgHeight)
-            imgDataContext.setTransform(1, 0, 0, 1, 0, 0);
+        faceConfig.map((config) => {
+            const centerPoint = [];
+            const img = this.imgs[config.id];
+            centerPoint[0] = config.startPoint[0] + config.width /2;
+            centerPoint[1] = config.startPoint[1] + config.height /2;
+            
+            renderContext.save();
+            // 直接计算矩阵
+            // renderContext.translate(centerPoint[0], centerPoint[1]);
+            // renderContext.rotate(config.rotate);
+            // renderContext.translate(-centerPoint[0], -centerPoint[1]);
+            renderContext.transform(...config.matrix);
             renderContext.drawImage(
-                imgDataCanvas, 
-                config.destinationPoints.a.x, 
-                config.destinationPoints.a.y, 
-                config.width, 
-                config.height
+                img, 
+                config.startPoint[0], config.startPoint[1], 
+                config.width, config.height
             );
-            imgDataContext.restore();
+            renderContext.restore();
+
+            // 绘制辅助线
+            if(this.state.selectedImgId === config.id){
+                helperCanvasContex.clearRect(0, 0, helperWidth, helperHeight);
+                renderContext.save();
+                renderContext.restore();
+            }
         });
     }
 
@@ -116,14 +112,23 @@ export default class UVandDesign extends Component {
         return (
             <div className="UV-mix-wrap display-flex mt10">
                 <div className="face-config-bar">
+                    <p>请选择需要操作的面</p>
                     {
                         faceConfig.map((face) => {
                             this.needLoadImgNum++ ;
                             return (
-                                <div className="mt10" key={face.id}>
+                                <div 
+                                    className={(face.id === this.state.selectedImgId ? "selected" : "") + " face-id-box"} 
+                                    onClick = {
+                                        () => {
+                                            this.setState({selectedImgId: face.id})
+                                        }
+                                    } 
+                                    key={face.id}
+                                >
                                     <a>设计面：{face.name}</a>
                                     <img 
-                                        ref={(img) => {this.imgs.push({id: face.id, img})}} 
+                                        ref={(img) => {this.imgs[face.id] = img}} 
                                         className="design-img-box" 
                                         src={face.img} 
                                         onLoad={this.handelImgLoad} 
@@ -136,10 +141,9 @@ export default class UVandDesign extends Component {
                 </div>
                 <div className="show-UV-bar">
                     <div className="relative set-UV-box">
-                        <canvas ref={this.draw_design_img} width={UV.size} height={UV.size} style={{width: '100%', height: '100%'}}></canvas>
+                        <canvas ref={this.draw_design_img} width={600} height={600} style={{width: '100%', height: '100%'}}></canvas>
                         <canvas ref={this.UV_design_render} width={UV.size} height={UV.size} style={{width: '100%', height: '100%'}}></canvas>
-                        
-                        <canvas style={{width: '100%', height: '100%'}}></canvas>
+                        <canvas ref={this.UV_design_helper} width={UV.size} height={UV.size} style={{width: '100%', height: '100%'}}></canvas>
                     </div>
                 </div>
                 <div className="oprate-bar">

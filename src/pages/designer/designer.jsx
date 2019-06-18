@@ -5,7 +5,6 @@ import ModelPreview from '../../components/ModelPreview/ModelPreview.jsx';
 import ChangeUVandModel from './components/ChangeUVandModel.jsx';
 import UVandDesign from './components/UVandDesign.jsx';
 
-
 // 面数据
 let faceConfig = [
     {
@@ -13,50 +12,57 @@ let faceConfig = [
         id: 1,
         img: '/img/print/p1.jpg',
         width: 300,
-        height: 400,
-        destinationPoints: {
-            a: {
-                x: 0,
-                y: 0
-            },
-            b: {
-                x: 300,
-                y: 0
-            },
-            c: {
-                x: 300,
-                y: 400
-            },
-            d: {
-                x: 0,
-                y: 400
-            }
-        }
+        height: 300,
+        // 绘制起点
+        startPoint: [0, 0],
+        // 最终变换矩阵(a, b, c, d, e, f)
+        matrix: [
+            1, 0, 
+            0, 1,
+            0, 0
+        ]
     },
     {
         name: 'B',
         id: 2,
         img: '/img/print/p2.jpg',
         width: 300,
-        height: 400,
-        destinationPoints: {
-            a: {
-                x: 350,
-                y: 50
-            },
-            b: {
-                x: 650,
-                y: 0
-            },
-            c: {
-                x: 650,
-                y: 400
-            },
-            d: {
-                x: 350,
-                y: 450
-            }
-        }
+        height: 300,
+        rotate: Math.PI / 4,
+        startPoint: [350, 50],
+        matrix: [
+            1, 0, 
+            0, 1,
+            0, 0
+        ]
+    },
+    {
+        name: 'C',
+        id: 3,
+        img: '/img/print/p3.jpg',
+        width: 300,
+        height: 300,
+        rotate: Math.PI/2,
+        startPoint: [650, 0],
+        matrix: [
+            1, 0, 
+            0, 1,
+            0, 0
+        ]
+    },
+    {
+        name: 'D',
+        id: 4,
+        img: '/img/print/p4.jpg',
+        width: 300,
+        height: 300,
+        rotate: 0,
+        startPoint: [350, 400],
+        matrix: [
+            1, 0, 
+            0, 1,
+            0, 0
+        ]
     },
 ];
 class Designer extends Component {
@@ -65,7 +71,7 @@ class Designer extends Component {
         this.state = {
             model: 2,
             UV: {
-                color: '#ff0000',
+                color: '#ff00ff',
                 size: 1024
             }
         };

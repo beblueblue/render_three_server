@@ -13,24 +13,37 @@
         width: @btnWidth;
         text-align: center;
         .design-img-box {
-            width: 160px;
-            height: 160px;
+            margin-left: 10px; 
+            width: 80px;
+            height: 80px;
+        }
+        .face-id-box {
+            margin: 10px; 
+            .border-dashed(#fff);
+            padding: 5px;
+        }
+        .face-id-box.selected,
+        .face-id-box:hover {
+            
+            .border-dashed(green);
         }
     }
     .show-UV-bar {
         padding: 20px;
         height: calc(100vw - @totalWidth);
+        min-width: 500px;
+        min-height: 500px;
         background: #e8e8e8;
         flex: 1;
         .set-UV-box {
             .border-dashed(red);
             height: 100%;
             background: #fff;
-            // canvas {
-            //     position: absolute;
-            //     top: 0;
-            //     left: 0;
-            // }
+            canvas {
+                position: absolute;
+                top: 0;
+                left: 0;
+            }
         }
     }
     .oprate-bar {
