@@ -1,4 +1,5 @@
 import React, {Component, useEffect} from 'react';
+import Fabric from 'fabric';
 import {Vector2, Matrix3} from 'three';
 import PropTypes from 'prop-types';
 
@@ -68,9 +69,7 @@ export default class UVandDesign extends Component {
         const height = renderCanvas.height;
         // 输出辅助线的画布
         let helperCanvas = this.UV_design_helper.current;
-        let helperCanvasContex = helperCanvas.getContext('2d');
-        const helperWidth = helperCanvas.width;
-        const helperHeight = helperCanvas.height;
+        let helperCanvasContext = helperCanvas.getContext('2d');
 
         let {faceConfig, UV} = this.props;
         const baseColor = UV.color;
@@ -78,6 +77,8 @@ export default class UVandDesign extends Component {
         renderContext.clearRect(0, 0, width, height);
         renderContext.fillStyle = baseColor;
         renderContext.fillRect(0, 0, width, height);
+
+        helperCanvasContext.clearRect(0, 0, width, height);
         faceConfig.map((config) => {
             const centerPoint = [];
             const img = this.imgs[config.id];
@@ -99,9 +100,20 @@ export default class UVandDesign extends Component {
 
             // 绘制辅助线
             if(this.state.selectedImgId === config.id){
-                helperCanvasContex.clearRect(0, 0, helperWidth, helperHeight);
-                renderContext.save();
-                renderContext.restore();
+                console.log(this.state.selectedImgId)
+                console.log(width, height)
+                // helperCanvasContext.transform(...config.matrix);
+                helperCanvasContext.beginPath();
+                helperCanvasContext.strokeStyle = 'black';
+                helperCanvasContext.setLineDash([5,5]);
+                helperCanvasContext.rect(config.startPoint[0] - 1, config.startPoint[1] - 1, config.width + 2, config.height + 2)
+                // helperCanvasContext.moveTo(config.startPoint[0], config.startPoint[1]);
+                // helperCanvasContext.lineTo(config.startPoint[0] + config.width, config.startPoint[1]);
+                // helperCanvasContext.lineTo(config.startPoint[0] + config.width, config.startPoint[1] + config.height);
+                // helperCanvasContext.lineTo(config.startPoint[0], config.startPoint[1] + config.height);
+                // helperCanvasContext.lineTo(config.startPoint[0], config.startPoint[1]);
+                // helperCanvasContext.closePath();
+                helperCanvasContext.stroke();
             }
         });
     }
@@ -141,7 +153,7 @@ export default class UVandDesign extends Component {
                 </div>
                 <div className="show-UV-bar">
                     <div className="relative set-UV-box">
-                        <canvas ref={this.draw_design_img} width={600} height={600} style={{width: '100%', height: '100%'}}></canvas>
+                        {/* <canvas ref={this.draw_design_img} width={600} height={600} style={{width: '100%', height: '100%'}}></canvas> */}
                         <canvas ref={this.UV_design_render} width={UV.size} height={UV.size} style={{width: '100%', height: '100%'}}></canvas>
                         <canvas ref={this.UV_design_helper} width={UV.size} height={UV.size} style={{width: '100%', height: '100%'}}></canvas>
                     </div>
