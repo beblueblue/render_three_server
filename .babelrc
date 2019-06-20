@@ -1,4 +1,4 @@
 {
-    "presets": ["react", "env"],
-    "plugins": ["transform-object-rest-spread"]
+    "presets": ["react", "env", "es2015", "stage-0"],
+    "plugins": ["transform-object-rest-spread", "syntax-dynamic-import"]
 }
