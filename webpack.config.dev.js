@@ -3,7 +3,10 @@ const CleanWebpackPlugin = require('clean-webpack-plugin');
 const path = require('path');
 
 module.exports = {
-    entry: './src/app.js',
+    entry: [
+        'babel-polyfill',
+        './src/app.js'
+    ],
     output: {
         path: path.resolve( __dirname, 'dist/assets' ),
         filename: 'assets/js/app.js',
@@ -21,6 +24,12 @@ module.exports = {
             verbose: true,
         })
     ],
+    resolve: {
+        extensions: ['.web.js', '.mjs', '.js', '.json', '.web.jsx', '.jsx'],
+        alias: {
+            '@': path.join(__dirname, 'src'),
+        }
+    },
     module: {
         rules: [
             {

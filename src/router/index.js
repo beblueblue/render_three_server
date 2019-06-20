@@ -1,8 +1,13 @@
 import React, {Component} from 'react';
 import {BrowserRouter, Switch, Route, Redirect} from 'react-router-dom';
+import asyncComponent from '@/utils/asyncComponent';
 
-import Home from "../pages/home/home.jsx";
-import Designer from "../pages/designer/designer.jsx";
+import Home from "@/pages/home/home";
+// 异步组件
+const Designer = asyncComponent(() => import("@/pages/designer/designer"));
+// import designer from '@/pages/designer/designer';
+
+// const Designer = asyncComponent(() => designer);
 
 class RouterIndex extends Component {
     render() {
