@@ -1,10 +1,12 @@
-import React, {Component} from 'react';
+import React, { Component, Fragment } from 'react';
 import ReactDOM from 'react-dom';
 import { fabric } from 'fabric';
 import PropTypes from 'prop-types';
 
-import { getConfig, selectImgId } from '@/store/designer/action';
+import { getConfig, selectImgId, updateUV } from '@/store/designer/action';
 import { connect } from 'react-redux';
+
+import ModelPreview from '@/components/ModelPreview/ModelPreview.jsx';
 
 class Fabric extends Component {
     constructor(props) {
@@ -13,6 +15,8 @@ class Fabric extends Component {
         this.imgs = {};
         this.imgsMap = new Map();
         this.fabricCanvas = new fabric.Canvas();
+
+        this.updateCanvaToUV = this.updateCanvaToUV.bind(this);
     }
 
     componentDidMount(){
@@ -25,43 +29,47 @@ class Fabric extends Component {
             width: UV.size,
             height: UV.size
         });
+        this.fabricCanvas.clear();
 
         // 当选择画布中的对象时，该对象不出现在顶层
         this.fabricCanvas.preserveObjectStacking = true;
         this.fabricCanvas.on('selection:updated', () => {
             let activeObj = this.fabricCanvas.getActiveObject();
 
-            console.log('seleted:update')
             selectImgId(this.imgsMap.get(activeObj));
         });
         this.fabricCanvas.on('selection:created', () => {
             let activeObj = this.fabricCanvas.getActiveObject();
 
-            console.log('seleted:created')
             selectImgId(this.imgsMap.get(activeObj));
         });
         this.fabricCanvas.on('selection:cleared', () => {
             selectImgId(null);
         });
+        this.fabricCanvas.on('mouse:up', () => {
+            this.updateCanvaToUV();
+        })
     }
 
     componentDidUpdate(){
         let { faceConfigList, selectedImgId } = this.props;
         let self = this;
 
-        console.log('did update')
         // 导入图片对象
         faceConfigList.map((config) => {
             const URL = config.img;
             let imgObj = self.imgs[config.id];
 
             if(imgObj){
-                if (config.id === selectedImgId) {
+                if (config.id === selectedImgId) { 
                     // setActiveObject，无法绘制辅助线
                     self.fabricCanvas.setActiveObject(imgObj);
                 }
             } else {
                 fabric.Image.fromURL(URL, (oImg) => {
+                    if (self.imgs[config.id]) {
+                        return false;
+                    }
                     // 图片缩放到指定高宽
                     oImg.scaleToWidth(config.width);
                     oImg.scaleToHeight(config.height);
@@ -85,8 +93,14 @@ class Fabric extends Component {
                     }
                 });
             }
-            
         });
+        this.updateCanvaToUV();
+    }
+
+    updateCanvaToUV(){
+        let { updateUV } = this.props;
+        let texture = this.fabricCanvas.toDataURL({ format: 'png' });
+        updateUV(texture);
     }
 
     render(){
@@ -97,7 +111,6 @@ class Fabric extends Component {
 }
 
 class UVandDesign extends Component {
-
     componentWillMount(){
         let faceConfig = [
             {
@@ -173,48 +186,52 @@ class UVandDesign extends Component {
     }
 
     render(){
-        let { UV, changeUV, selectImgId } = this.props;
+        let { UV, changeUV, selectImgId, model, updateUV } = this.props;
 
         return (
-            <div className="UV-mix-wrap display-flex mt10">
-                <div className="face-config-bar">
-                    <p>请选择需要操作的面</p>
-                    {
-                        changeUV.faceConfigList.map((face) => {
-                            return (
-                                <div 
-                                    className={(face.id === changeUV.selectedImgId ? "selected" : "") + " face-id-box"} 
-                                    onClick = {
-                                        () => selectImgId(face.id)
+            <Fragment>
+                <div className="UV-mix-wrap display-flex mt10">
+                    <div className="face-config-bar">
+                        <p>请选择需要操作的面</p>
+                        {
+                            changeUV.faceConfigList.map((face) => {
+                                return (
+                                    <div 
+                                        className={(face.id === changeUV.selectedImgId ? "selected" : "") + " face-id-box"} 
+                                        onClick = {
+                                            () => selectImgId(face.id)
+                                        }
+                                        key={face.id}
+                                    >
+                                        <a>设计面：{face.name}</a>
+                                        <img 
+                                            className="design-img-box" 
+                                            src={face.img} 
+                                            alt={'设计面：' + face.name}
+                                        />
+                                    </div>
+                                );
+                            })
+                        }
+                    </div>
+                    <div className="show-UV-bar">
+                        <div className="relative set-UV-box">
+                            <Fabric { ...{ UV, 
+                                            faceConfigList: changeUV.faceConfigList, 
+                                            selectedImgId: changeUV.selectedImgId,
+                                            selectImgId,
+                                            updateUV,
+                                        }
                                     }
-                                    key={face.id}
-                                >
-                                    <a>设计面：{face.name}</a>
-                                    <img 
-                                        className="design-img-box" 
-                                        src={face.img} 
-                                        alt={'设计面：' + face.name}
-                                    />
-                                </div>
-                            );
-                        })
-                    }
-                </div>
-                <div className="show-UV-bar">
-                    <div className="relative set-UV-box">
-                        <Fabric { ...{ UV, 
-                                        faceConfigList: changeUV.faceConfigList, 
-                                        selectedImgId: changeUV.selectedImgId,
-                                        selectImgId,
-                                    }
-                                }
-                        />
+                            />
+                        </div>
+                    </div>
+                    <div className="oprate-bar">
+                        操作栏
                     </div>
                 </div>
-                <div className="oprate-bar">
-                    操作栏
-                </div>
-            </div>
+                <ModelPreview {...{ model, UVmap: changeUV.UVmap }}/>
+            </Fragment>
         );
     }
 }
@@ -225,6 +242,7 @@ UVandDesign.propTypes = {
     }),
     getConfig: PropTypes.func.isRequired,
     selectImgId: PropTypes.func.isRequired,
+    updateUV: PropTypes.func.isRequired, 
 }
 
 export default connect(
@@ -233,6 +251,7 @@ export default connect(
     }),
     {
         getConfig,
-        selectImgId
+        selectImgId,
+        updateUV
     }
 )(UVandDesign);

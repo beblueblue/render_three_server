@@ -4,3 +4,5 @@ export const GETCONFIG = 'GETCONFIG';
 export const SETIMGID = 'SETIMGID';
 // 新增面图像对象
 export const ADDFACEIMG = 'ADDFACEIMG';
+// 更新纹理图
+export const UPDATEUV = 'UPDATEUV';

@@ -12,16 +12,19 @@ let defaultState = {
     // 当前操作的图像ID
     selectedImgId: 4,
 
-    faceImgs: {}
+    faceImgs: {},
+
+    // 完整的纹理图，由canvas转化
+    UVmap: null,
 }
 
 export const changeUV = (state = defaultState, action) => {
     switch (action.type) {
         case Designer.GETCONFIG:
-            return { ...state, ...{faceConfigList: action.faceConfigList} };
+            return { ...state, ...{ faceConfigList: action.faceConfigList } };
             break;
         case Designer.SETIMGID:
-            return { ...state, ...{selectedImgId: action.selectedImgId}};
+            return { ...state, ...{ selectedImgId: action.selectedImgId } };
                 break;
         case Designer.ADDFACEIMG:
             let faceImg = {};
@@ -32,6 +35,9 @@ export const changeUV = (state = defaultState, action) => {
 
             return { ...state, faceImgs};
                 break;
+        case Designer.UPDATEUV:
+                return { ...state, ...{ UVmap: action.UVmap }};
+            break;
         default:
             return state;
     }

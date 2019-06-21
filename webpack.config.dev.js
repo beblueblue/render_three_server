@@ -1,6 +1,7 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const path = require('path');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
     entry: [
@@ -18,6 +19,13 @@ module.exports = {
             filename: 'index.html',
             template: 'src/index.html'
         }),
+        new CopyWebpackPlugin([
+            {
+                from: path.resolve(__dirname, './src/static'),
+                to: 'static',
+                ignore: ['.*']
+            }
+        ]),
         new CleanWebpackPlugin({
             cleanOnceBeforeBuildPatterns: [path.resolve(__dirname, 'dist')],
             dry: true,
@@ -162,6 +170,18 @@ module.exports = {
                         }
                     } 
                 ]
+            },
+            {
+                test: /models\/*\.js$/,
+                use: 'raw-loader',
+                //     {
+                //         laoder: 'raw-loader',
+                //         exclude: [
+                //             path.resolve( __dirname, 'node_modules' ),
+                //             path.resolve( __dirname, 'src/common' ),
+                //         ]
+                //     }
+                // ]
             },
         ]
     },

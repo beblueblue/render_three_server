@@ -1,19 +1,17 @@
 import './designer.less';
 
-import React, {Component, Fragment} from 'react';
-import ModelPreview from '../../components/ModelPreview/ModelPreview.jsx';
-import UVandDesign from './components/UVandDesign.jsx';
+import React, { Component, Fragment } from 'react';
+import UVandDesign from '@/pages/designer/components/UVandDesign.jsx';
 
 class Designer extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            model: 2,
             UV: {
                 color: '#ff00ff',
                 size: 1024
             },
-            UVmap: null
+            model: 2,
         };
     }
     render(){
@@ -37,15 +35,14 @@ class Designer extends Component {
 }
 
 function OpratePart(props) {
-    let {UV, model, UVmap} = props;
+    let { UV, model } = props;
     return (
         <Fragment>
             <div className="change-btn-box ma">
                 <a className="main-btn-b">更换模型</a>
                 <a className="ml20 main-btn-b">更换纹理图</a>
             </div>
-            <UVandDesign {...{UV}} />
-            <ModelPreview {...{model, UVmap}}/>
+            <UVandDesign {...{ UV, model }} />
         </Fragment>
     );
 }
