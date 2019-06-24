@@ -15,7 +15,7 @@ let defaultState = {
     faceImgs: {},
 
     // 完整的纹理图，由canvas转化
-    UVmap: null,
+    UVMap: null,
 }
 
 export const changeUV = (state = defaultState, action) => {
@@ -36,7 +36,7 @@ export const changeUV = (state = defaultState, action) => {
             return { ...state, faceImgs};
                 break;
         case Designer.UPDATEUV:
-                return { ...state, ...{ UVmap: action.UVmap }};
+                return { ...state, ...{ UVMap: action.UVMap }};
             break;
         default:
             return state;

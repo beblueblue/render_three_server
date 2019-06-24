@@ -30,13 +30,13 @@ export const addFaceImg = (ID, faceImg) => {
 }
 
 // 更新纹理图
-export const updateUV = (UVmap) => (dispatch, getState) => {
+export const updateUV = (UVMap) => (dispatch, getState) => {
     const { changeUV } = getState();
 
-    if (UVmap !== changeUV.UVmap) {
+    if (UVMap !== changeUV.UVMap) {
         dispatch({
             type: Designer.UPDATEUV,
-            UVmap
+            UVMap
         });
     }
 }

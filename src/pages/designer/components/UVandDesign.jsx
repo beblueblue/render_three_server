@@ -27,7 +27,8 @@ class Fabric extends Component {
 
         this.fabricCanvas.initialize(el, {
             width: UV.size,
-            height: UV.size
+            height: UV.size,
+            backgroundColor: '#fff',
         });
         this.fabricCanvas.clear();
 
@@ -216,7 +217,9 @@ class UVandDesign extends Component {
                     </div>
                     <div className="show-UV-bar">
                         <div className="relative set-UV-box">
-                            <Fabric { ...{ UV, 
+                            <Fabric { 
+                                        ...{ 
+                                            UV, 
                                             faceConfigList: changeUV.faceConfigList, 
                                             selectedImgId: changeUV.selectedImgId,
                                             selectImgId,
@@ -230,7 +233,13 @@ class UVandDesign extends Component {
                         操作栏
                     </div>
                 </div>
-                <ModelPreview {...{ model, UVmap: changeUV.UVmap }}/>
+                <ModelPreview {
+                                ...{ 
+                                    model, 
+                                    UVMap: changeUV.UVMap 
+                                }
+                              }
+                />
             </Fragment>
         );
     }
