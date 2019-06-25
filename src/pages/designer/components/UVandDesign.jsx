@@ -13,7 +13,9 @@ class Fabric extends Component {
         super(props);
 
         this.imgs = {};
+        this.imgsArr = [];
         this.imgsMap = new Map();
+        this.imgLoadNum = 0;
         this.fabricCanvas = new fabric.Canvas();
 
         this.updateCanvaToUV = this.updateCanvaToUV.bind(this);
@@ -28,28 +30,34 @@ class Fabric extends Component {
         this.fabricCanvas.initialize(el, {
             width: UV.size,
             height: UV.size,
-            backgroundColor: '#fff',
         });
         this.fabricCanvas.clear();
+        this.fabricCanvas.setBackgroundColor('#fff');
+        // 导入UV背景
+
 
         // 当选择画布中的对象时，该对象不出现在顶层
         this.fabricCanvas.preserveObjectStacking = true;
-        this.fabricCanvas.on('selection:updated', () => {
-            let activeObj = this.fabricCanvas.getActiveObject();
+        this.fabricCanvas.on('selection:updated', (opt) => {
+            if(opt.e.type !== 'redux, fire'){
+                let activeObj = this.fabricCanvas.getActiveObject();
 
-            selectImgId(this.imgsMap.get(activeObj));
+                selectImgId(this.imgsMap.get(activeObj));
+            }
         });
-        this.fabricCanvas.on('selection:created', () => {
-            let activeObj = this.fabricCanvas.getActiveObject();
+        this.fabricCanvas.on('selection:created', (opt) => {
+            if(opt.e.type !== 'redux, fire'){
+                let activeObj = this.fabricCanvas.getActiveObject();
 
-            selectImgId(this.imgsMap.get(activeObj));
+                selectImgId(this.imgsMap.get(activeObj));
+            }
         });
-        this.fabricCanvas.on('selection:cleared', () => {
+        this.fabricCanvas.on('selection:cleared', (opt) => {
             selectImgId(null);
         });
         this.fabricCanvas.on('mouse:up', () => {
             this.updateCanvaToUV();
-        })
+        });
     }
 
     componentDidUpdate(){
@@ -57,18 +65,19 @@ class Fabric extends Component {
         let self = this;
 
         // 导入图片对象
-        faceConfigList.map((config) => {
+        faceConfigList.forEach((config, index) => {
             const URL = config.img;
-            let imgObj = self.imgs[config.id];
+            let imgObj = self.imgsArr[index];
 
             if(imgObj){
                 if (config.id === selectedImgId) { 
                     // setActiveObject，无法绘制辅助线
-                    self.fabricCanvas.setActiveObject(imgObj);
+                    var s = self.fabricCanvas.setActiveObject(imgObj.oImg, { type: 'redux, fire' });
                 }
             } else {
                 fabric.Image.fromURL(URL, (oImg) => {
-                    if (self.imgs[config.id]) {
+                    // hack, 避免图片重复下载
+                    if (self.imgsArr[config.id]) {
                         return false;
                     }
                     // 图片缩放到指定高宽
@@ -85,13 +94,22 @@ class Fabric extends Component {
                     oImg.rotate(config.angle);
                     
                     // 构建图像映射
+                    self.imgsArr[index] = { oImg: oImg, id: config.id };
                     self.imgs[config.id] = oImg;
                     self.imgsMap.set(oImg, config.id);
+                    self.imgLoadNum++;
 
-                    self.fabricCanvas.add(oImg);
-                    if (config.id === selectedImgId) {
-                        self.fabricCanvas.setActiveObject(oImg);
+                    // 同步加入图片
+                    if (self.imgLoadNum === faceConfigList.length) {
+                        self.imgLoadNum = 0;
+                        self.imgsArr.forEach((imgObj, index) => {
+                            this.fabricCanvas.add(imgObj.oImg);
+                            if (imgObj.id === selectedImgId) {
+                                this.fabricCanvas.setActiveObject(imgObj.oImg, { type: 'redux, fire' });
+                            }
+                        })
                     }
+
                 });
             }
         });
@@ -101,6 +119,7 @@ class Fabric extends Component {
     updateCanvaToUV(){
         let { updateUV } = this.props;
         let texture = this.fabricCanvas.toDataURL({ format: 'png' });
+
         updateUV(texture);
     }
 
@@ -183,7 +202,7 @@ class UVandDesign extends Component {
                 top: 300
             }
         ];
-        this.props.getConfig(faceConfig);
+        this.props.getConfig(faceConfig.slice(0,4));
     }
 
     render(){
@@ -247,7 +266,8 @@ class UVandDesign extends Component {
 UVandDesign.propTypes = {
     changeUV: PropTypes.shape({
         faceConfigList: PropTypes.array.isRequired,
-        selectedImgId: PropTypes.number
+        selectedImgId: PropTypes.number,
+        UVMap: PropTypes.string,
     }),
     getConfig: PropTypes.func.isRequired,
     selectImgId: PropTypes.func.isRequired,

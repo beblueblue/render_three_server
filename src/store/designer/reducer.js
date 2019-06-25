@@ -10,7 +10,7 @@ let defaultState = {
      */
     faceConfigList: [],
     // 当前操作的图像ID
-    selectedImgId: 4,
+    selectedImgId: 1,
 
     faceImgs: {},
 

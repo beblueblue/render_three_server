@@ -125,6 +125,7 @@ export default class ModelPreview extends Component {
                     child.material.side = THREE.DoubleSide;
                 }
             })
+            this.meshObj.position.y = -5;
             this.animateRender();
         }
     }
@@ -143,7 +144,7 @@ export default class ModelPreview extends Component {
     render(){
         return (
             <Fragment>
-                <canvas className={`preview-canvas ${this.props.className || ''}`} width="600" height="600"></canvas>
+                <canvas className={`preview-canvas ${this.props.className || ''}`} width="600" height="400"></canvas>
             </Fragment>
         );
     }

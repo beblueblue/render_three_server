@@ -3,13 +3,16 @@ import './designer.less';
 import React, { Component, Fragment } from 'react';
 import UVandDesign from '@/pages/designer/components/UVandDesign.jsx';
 
+const UVGridURL = '/static/imgs/cup.png';
+
 class Designer extends Component {
     constructor(props) {
         super(props);
         this.state = {
             UV: {
                 color: '#ff00ff',
-                size: 1024
+                size: 1024,
+                backgroundImg: UVGridURL,
             },
             model: 2,
         };
