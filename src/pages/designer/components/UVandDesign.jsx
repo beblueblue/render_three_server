@@ -161,6 +161,7 @@ class Fabric extends Component {
                     this.fabricCanvas.setActiveObject(imgObj.oImg, { type: this.REDUXFIRE });
                 }
             })
+            this.updateCanvaToUV();
         }
     }
 
@@ -282,7 +283,7 @@ class UVandDesign extends Component {
     }
 
     render(){
-        let { UV, model, changeUV, getConfig, selectImgId, updateUV, toggleUVBackground } = this.props;
+        let { UV, model, changeUV, selectImgId, updateUV, toggleUVBackground } = this.props;
         return (
             <Fragment>
                 <div className="UV-mix-wrap display-flex mt10">
@@ -298,7 +299,7 @@ class UVandDesign extends Component {
                                         }
                                         key={face.id}
                                     >
-                                        <a>设计面：{face.name}</a>
+                                        <a>生产面：{face.name}</a>
                                         <img 
                                             className="design-img-box" 
                                             src={face.img} 
@@ -331,18 +332,20 @@ class UVandDesign extends Component {
                         <div className="mt10">
                             <a className="main-btn-b" onClick={() => this.consoleFabric()}>打印参数</a>
                         </div>
-                        <div className="mt10">
+                        <div className="mt10 mb20">
                             <a className="main-btn-b" onClick={() => toggleUVBackground(!changeUV.showUVBackground)}>{changeUV.showUVBackground ? '隐藏' : '显示'}UV映射关系图</a>
                         </div>
-                    </div>
-                </div>
-                <ModelPreview {
+                        <ModelPreview {
                                 ...{ 
                                     model, 
-                                    UVMap: changeUV.UVMap 
+                                    UVMap: changeUV.UVMap,
+                                    width: 400,
+                                    height: 400 
                                 }
                               }
-                />
+                        />
+                    </div>
+                </div>
             </Fragment>
         );
     }

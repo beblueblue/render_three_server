@@ -146,7 +146,10 @@ export default class ModelPreview extends Component {
     render(){
         return (
             <Fragment>
-                <canvas className={`preview-canvas ${this.props.className || ''}`} width="600" height="400"></canvas>
+                <canvas className={`preview-canvas ${this.props.className || ''}`} 
+                    width={this.props.width} 
+                    height={this.props.height} 
+                ></canvas>
             </Fragment>
         );
     }
