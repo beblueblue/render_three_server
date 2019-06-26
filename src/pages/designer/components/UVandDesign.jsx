@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { fabric } from 'fabric';
 import PropTypes from 'prop-types';
 
-import { getConfig, selectImgId, updateUV } from '@/store/designer/action';
+import * as actions from '@/store/designer/action';
 import { connect } from 'react-redux';
 
 import ModelPreview from '@/components/ModelPreview/ModelPreview.jsx';
@@ -12,17 +12,25 @@ class Fabric extends Component {
     constructor(props) {
         super(props);
 
-        this.imgs = {};
+        // 设计面图片
         this.imgsArr = [];
         this.imgsMap = new Map();
-        this.imgLoadNum = 0;
+        // UV背景图
+        this.UVBackgroud = null;
+
+        this.imgLoadedNum = 0;
+        this.imgNeedNum = 0;
         this.fabricCanvas = new fabric.Canvas();
 
         this.updateCanvaToUV = this.updateCanvaToUV.bind(this);
+        this.renderImgs = this.renderImgs.bind(this);
+
+        this.REDUXFIRE = 'REDUX, FIRE';
+        window.fabricCanvas = this.fabricCanvas;
     }
 
     componentDidMount(){
-        let { UV, selectImgId } = this.props;
+        let { UV, actions } = this.props;
 
         // 获取实例dom
         let el = ReactDOM.findDOMNode(this);
@@ -34,26 +42,45 @@ class Fabric extends Component {
         this.fabricCanvas.clear();
         this.fabricCanvas.setBackgroundColor('#fff');
         // 导入UV背景
-
+        this.imgNeedNum++;
+        fabric.Image.fromURL(UV.backgroundImg, (oImg) => {
+            // hack, 避免图片重复下载
+            if (this.UVBackgroud) {
+                return false;
+            }
+            // 背景图不可选中
+            oImg.set({
+                selectable: false,
+                hoverCursor: 'default',
+            });
+            // 图片缩放到指定高宽
+            oImg.scaleToWidth(UV.size);
+            oImg.scaleToHeight(UV.size);
+            
+            // 构建图像映射
+            this.UVBackgroud = oImg;
+            this.imgLoadedNum++;
+            this.renderImgs();
+        });
 
         // 当选择画布中的对象时，该对象不出现在顶层
         this.fabricCanvas.preserveObjectStacking = true;
         this.fabricCanvas.on('selection:updated', (opt) => {
-            if(opt.e.type !== 'redux, fire'){
+            if(opt.e.type !== this.REDUXFIRE){
                 let activeObj = this.fabricCanvas.getActiveObject();
 
-                selectImgId(this.imgsMap.get(activeObj));
+                actions.selectImgId(this.imgsMap.get(activeObj));
             }
         });
         this.fabricCanvas.on('selection:created', (opt) => {
-            if(opt.e.type !== 'redux, fire'){
+            if(opt.e.type !== this.REDUXFIRE){
                 let activeObj = this.fabricCanvas.getActiveObject();
 
-                selectImgId(this.imgsMap.get(activeObj));
+                actions.selectImgId(this.imgsMap.get(activeObj));
             }
         });
         this.fabricCanvas.on('selection:cleared', (opt) => {
-            selectImgId(null);
+            actions.selectImgId(null);
         });
         this.fabricCanvas.on('mouse:up', () => {
             this.updateCanvaToUV();
@@ -62,65 +89,92 @@ class Fabric extends Component {
 
     componentDidUpdate(){
         let { faceConfigList, selectedImgId } = this.props;
-        let self = this;
 
         // 导入图片对象
         faceConfigList.forEach((config, index) => {
             const URL = config.img;
-            let imgObj = self.imgsArr[index];
+            let imgObj = this.imgsArr[index];
 
             if(imgObj){
                 if (config.id === selectedImgId) { 
                     // setActiveObject，无法绘制辅助线
-                    var s = self.fabricCanvas.setActiveObject(imgObj.oImg, { type: 'redux, fire' });
+                    this.fabricCanvas.setActiveObject(imgObj.oImg, { type: this.REDUXFIRE  });
+                    // this.fabricCanvas.renderAll();
                 }
             } else {
+                this.imgNeedNum++;
                 fabric.Image.fromURL(URL, (oImg) => {
                     // hack, 避免图片重复下载
-                    if (self.imgsArr[config.id]) {
+                    if (this.imgsArr[config.id]) {
                         return false;
                     }
-                    // 图片缩放到指定高宽
-                    oImg.scaleToWidth(config.width);
-                    oImg.scaleToHeight(config.height);
-                    // 配置读取
-                    oImg.set({
-                        left: config.left,
-                        top: config.top,
-                        flipX: config.flipX,
-                        flipY: config.flipY,
-                    });
-                    // 中心旋转
-                    oImg.rotate(config.angle);
+                    if (config.matrix) {
+                        oImg.set({
+                            transformMatrix: config.matrix
+                        });
+                    } else {
+                        // 先旋转变化, 后拉伸变化
+                        // 中心旋转
+                        oImg.rotate(config.angle);
+                        // 配置读取
+                        config.scaleX = config.scaleX || config.width / oImg.width;
+                        config.scaleY = config.scaleY || config.height / oImg.height;
+                        oImg.setOptions({
+                            left: config.left,
+                            top: config.top,
+                            flipX: config.flipX,
+                            flipY: config.flipY,
+                            scaleX: config.scaleX,
+                            scaleY: config.scaleY,
+                            // 选中样式
+                            borderColor: 'green',
+                            borderDashArray: [5,5],
+                            cornerColor: '#428bca',
+                            transparentCorners: false,
+                            padding: '10',
+                            // 以中心点作为缩放中心，可直接拖拽翻转
+                            // centeredScaling: true,
+                        });
+                    }
                     
                     // 构建图像映射
-                    self.imgsArr[index] = { oImg: oImg, id: config.id };
-                    self.imgs[config.id] = oImg;
-                    self.imgsMap.set(oImg, config.id);
-                    self.imgLoadNum++;
-
-                    // 同步加入图片
-                    if (self.imgLoadNum === faceConfigList.length) {
-                        self.imgLoadNum = 0;
-                        self.imgsArr.forEach((imgObj, index) => {
-                            this.fabricCanvas.add(imgObj.oImg);
-                            if (imgObj.id === selectedImgId) {
-                                this.fabricCanvas.setActiveObject(imgObj.oImg, { type: 'redux, fire' });
-                            }
-                        })
-                    }
-
+                    this.imgsArr[index] = { oImg: oImg, id: config.id };
+                    this.imgsMap.set(oImg, config.id);
+                    this.imgLoadedNum++;
+                    this.renderImgs();
                 });
             }
         });
         this.updateCanvaToUV();
     }
 
-    updateCanvaToUV(){
-        let { updateUV } = this.props;
-        let texture = this.fabricCanvas.toDataURL({ format: 'png' });
+    renderImgs(){
+        let { selectedImgId } = this.props;
+        // 同步加入图片
+        if (this.imgLoadedNum === this.imgNeedNum) {
+            this.imgLoadedNum = 0;
+            this.imgNeedNum = 0;
+            this.fabricCanvas.add(this.UVBackgroud);
+            this.imgsArr.forEach((imgObj) => {
+                this.fabricCanvas.add(imgObj.oImg);
+                if (imgObj.id === selectedImgId) {
+                    this.fabricCanvas.setActiveObject(imgObj.oImg, { type: this.REDUXFIRE });
+                }
+            })
+        }
+    }
 
-        updateUV(texture);
+    updateCanvaToUV(){
+        let { showUVBackground, actions } = this.props;
+        let texture;
+        
+        if (this.UVBackgroud) {
+            this.UVBackgroud.set({visible: false});
+            texture = this.fabricCanvas.toDataURL({ format: 'png' });
+            actions.updateUV(texture);
+            this.UVBackgroud.set({visible: showUVBackground});
+            this.fabricCanvas.renderAll();
+        }
     }
 
     render(){
@@ -131,7 +185,12 @@ class Fabric extends Component {
 }
 
 class UVandDesign extends Component {
+    constructor(props){
+        super(props);
+    }
+
     componentWillMount(){
+        // 其中缩放参数，默认为 config.width / img.width
         let faceConfig = [
             {
                 name: 'A',
@@ -146,18 +205,14 @@ class UVandDesign extends Component {
                 // 垂直镜像
                 flipY: false,
                 // 绘制起点
-                left: 0,
-                top: 0,
-                // 水平缩放
-                scaleX: 0.5,
-                // 垂直缩放
-                scaleY: 1,
+                left: 90,
+                top: 76,
             },
             {
                 name: 'B',
                 id: 2,
                 img: '/img/print/p2.jpg',
-                width: 300,
+                width: 800,
                 height: 300,
                 // 旋转角度
                 angle: 0,
@@ -166,8 +221,8 @@ class UVandDesign extends Component {
                 // 垂直镜像
                 flipY: false,
                 // 绘制起点
-                left: 300,
-                top: 0
+                left: 293,
+                top: 60,
             },
             {
                 name: 'C',
@@ -181,9 +236,21 @@ class UVandDesign extends Component {
                 flipX: false,
                 // 垂直镜像
                 flipY: true,
-                // 绘制起点
-                left: 600,
-                top: 0
+                /// 绘制起点
+                left: 740,
+                top: 767,
+                // 水平缩放
+                scaleX: 0.13,
+                // 垂直缩放
+                scaleY: 0.13,
+                // matrix: [
+                //     0.067,
+                //     0.114,
+                //     0.114,
+                //     -0.066,
+                //     727.829,
+                //     871.494
+                // ]
             },
             {
                 name: 'D',
@@ -192,22 +259,30 @@ class UVandDesign extends Component {
                 width: 300,
                 height: 300,
                 // 旋转角度
-                angle: 0,
+                angle: 44,
                 // 水平镜像
                 flipX: false,
                 // 垂直镜像
                 flipY: true,
                 // 绘制起点
-                left: 0,
-                top: 300
+                left: 643,
+                top: 96,
+                // 水平缩放
+                scaleX: 0.13,
+                // 垂直缩放
+                scaleY: 0.13,
             }
         ];
         this.props.getConfig(faceConfig.slice(0,4));
     }
 
-    render(){
-        let { UV, changeUV, selectImgId, model, updateUV } = this.props;
+    consoleFabric(){
+        console.log(window.fabricCanvas)
+        console.log(window.fabricCanvas.getActiveObject())
+    }
 
+    render(){
+        let { UV, model, changeUV, getConfig, selectImgId, updateUV, toggleUVBackground } = this.props;
         return (
             <Fragment>
                 <div className="UV-mix-wrap display-flex mt10">
@@ -239,17 +314,26 @@ class UVandDesign extends Component {
                             <Fabric { 
                                         ...{ 
                                             UV, 
+                                            actions: {
+                                                updateUV,
+                                                selectImgId,
+                                            },
                                             faceConfigList: changeUV.faceConfigList, 
                                             selectedImgId: changeUV.selectedImgId,
-                                            selectImgId,
-                                            updateUV,
+                                            showUVBackground: changeUV.showUVBackground,
                                         }
                                     }
                             />
                         </div>
                     </div>
-                    <div className="oprate-bar">
-                        操作栏
+                    <div className="oprate-bar pl10">
+                        <div className="tc">操作栏</div>
+                        <div className="mt10">
+                            <a className="main-btn-b" onClick={() => this.consoleFabric()}>打印参数</a>
+                        </div>
+                        <div className="mt10">
+                            <a className="main-btn-b" onClick={() => toggleUVBackground(!changeUV.showUVBackground)}>{changeUV.showUVBackground ? '隐藏' : '显示'}UV映射关系图</a>
+                        </div>
                     </div>
                 </div>
                 <ModelPreview {
@@ -268,19 +352,16 @@ UVandDesign.propTypes = {
         faceConfigList: PropTypes.array.isRequired,
         selectedImgId: PropTypes.number,
         UVMap: PropTypes.string,
-    }),
+    }).isRequired,
     getConfig: PropTypes.func.isRequired,
     selectImgId: PropTypes.func.isRequired,
     updateUV: PropTypes.func.isRequired, 
+    toggleUVBackground: PropTypes.func.isRequired
 }
 
 export default connect(
     state => ({
         changeUV: state.changeUV
     }),
-    {
-        getConfig,
-        selectImgId,
-        updateUV
-    }
+    actions,
 )(UVandDesign);

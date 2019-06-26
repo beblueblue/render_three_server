@@ -80,20 +80,22 @@ export default class ModelPreview extends Component {
 
         // 相机构建
         this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 10000);
-        this.camera.position.z = 40;
+        this.camera.position.x = 32;
+        this.camera.position.y = 23;
+        this.camera.position.z = -4;
         this.scene.add(this.camera);
 
         // 控制组件
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-        this.controls.autoRotate = true;
-        this.controls.autoRotateSpeed = 1;
+        // this.controls.autoRotate = true;
+        // this.controls.autoRotateSpeed = 1;
 
         // 光源构建
         //光源1为环境光
         ambientLight = new THREE.AmbientLight( 0xeeeeee, 0.8 );
         //光源2为点光源
         pointLight = new THREE.PointLight( 0xffffff, 0.3 );
-        pointLight.position.set( 0, 200, 0);
+        pointLight.position.set( 0, 200, -100);
 
         this.scene.add(ambientLight);
         this.scene.add(pointLight);

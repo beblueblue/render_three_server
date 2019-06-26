@@ -6,3 +6,5 @@ export const SETIMGID = 'SETIMGID';
 export const ADDFACEIMG = 'ADDFACEIMG';
 // 更新纹理图
 export const UPDATEUV = 'UPDATEUV';
+// 切换显示UV映射关系图
+export const TOGGLEUVBG = 'TOGGLEUVBG';

@@ -9,13 +9,16 @@ let defaultState = {
      * }]
      */
     faceConfigList: [],
+
     // 当前操作的图像ID
     selectedImgId: 1,
+    // 完整的纹理图，由canvas转化
+    UVMap: null,
+    // 是否显示UV映射关系图
+    showUVBackground: true,
 
     faceImgs: {},
 
-    // 完整的纹理图，由canvas转化
-    UVMap: null,
 }
 
 export const changeUV = (state = defaultState, action) => {
@@ -37,6 +40,9 @@ export const changeUV = (state = defaultState, action) => {
                 break;
         case Designer.UPDATEUV:
                 return { ...state, ...{ UVMap: action.UVMap }};
+            break;
+        case Designer.TOGGLEUVBG:
+                return { ...state, ...{ showUVBackground: action.showUVBackground }};
             break;
         default:
             return state;
