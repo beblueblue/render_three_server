@@ -14,7 +14,7 @@ class Designer extends Component {
                 size: 1024,
                 backgroundImg: UVGridURL,
             },
-            model: 2,
+            model: '/static/models/cupModel.obj',
         };
     }
     render(){

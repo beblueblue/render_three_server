@@ -1,5 +1,6 @@
 import { createStore, applyMiddleware, combineReducers} from 'redux';
-import * as designer from './designer/reducer';
+import * as Designer from './designer/reducer';
+import * as ProductDetail from './productDetail/reducer';
 import ReduxThunk from 'redux-thunk';
 import { createLogger } from 'redux-logger';
 import { composeWithDevTools } from 'redux-devtools-extension';
@@ -11,7 +12,7 @@ const loggerMiddleware = createLogger({ collapsed: true });
 const middlewares = [ ReduxThunk, loggerMiddleware ];
 
 let store = createStore(
-    combineReducers({ ...designer, }),
+    combineReducers({ ...Designer, ...ProductDetail }),
     composeWithDevTools(
         applyMiddleware(...middlewares)
     )

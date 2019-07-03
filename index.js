@@ -23,7 +23,7 @@ const gl = require('gl')(WIDTH, HEIGHT, {
 
 const outPath = './src/common/img/output/out.png';
 const backgroundImg = './src/common/img/background-demo.png';
-const modelPath = './src/common/models/textureObj2.js';
+const modelPath = './src/static/models/textureObj2.js';
 const png = new PNG({ width: WIDTH, height: HEIGHT });
 
 global.document = document;

@@ -23,12 +23,19 @@ export default class ModelPreview extends Component {
         this.controls = null;
         this.meshObj = null;
         this.textureMap = null;
+        this.UVMap = null;
 
         this.animateID = null;
 
         this.init = this.init.bind(this);
         this.renderModel = this.renderModel.bind(this);
         this.animateRender = this.animateRender.bind(this);
+        this.resetView = this.resetView.bind(this);
+        this.getCurView = this.getCurView.bind(this);
+
+        // 缓存初始配置
+        this.position = new THREE.Vector3();
+        this.target = new THREE.Vector3();
     }
 
     componentDidMount() {
@@ -40,13 +47,28 @@ export default class ModelPreview extends Component {
     }
 
     componentDidUpdate() {
-        let { UVMap } = this.props;
+        let { UVMap, resetViewFlag, resetOriginView, fireUpdateViewFlag, fireUpdateConfig, updateConfig } = this.props;
 
-        // 更新纹理
-        let textureLoader = new THREE.TextureLoader();
         UVMap = UVMap || UVBaseUrl;
-        this.textureMap = textureLoader.load(UVMap);
-        this.renderModel();
+        // 更新纹理
+        if (this.UVMap !== UVMap) {
+            this.UVMap = UVMap;
+            let textureLoader = new THREE.TextureLoader();
+            this.textureMap = textureLoader.load(UVMap);
+            this.renderModel();
+        }
+
+        // 重置视角
+        if (resetViewFlag) {
+            this.resetView();
+            resetOriginView(false);
+        }
+
+        // 保存当前视角数据
+        if (fireUpdateViewFlag) {
+            updateConfig(this.getCurView());
+            fireUpdateConfig(false);
+        }
     }
 
     componentWillUnmount() {
@@ -62,8 +84,8 @@ export default class ModelPreview extends Component {
         let textureLoader;
         let modelLoader;
 
-        // model = model || ModelUrl;
-        model = ModelUrl;
+        // 模型地址地址
+        model = model || ModelUrl;
         
         // 渲染器
         this.renderer = new THREE.WebGLRenderer({
@@ -84,11 +106,13 @@ export default class ModelPreview extends Component {
         this.camera.position.y = 23;
         this.camera.position.z = -4;
         this.scene.add(this.camera);
+        this.position.add(this.camera.position); 
 
         // 控制组件
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
         // this.controls.autoRotate = true;
         // this.controls.autoRotateSpeed = 1;
+        this.target.add(this.controls.target);
 
         // 光源构建
         //光源1为环境光
@@ -152,5 +176,28 @@ export default class ModelPreview extends Component {
                 ></canvas>
             </Fragment>
         );
+    }
+
+    // 重置相机视角
+    resetView(){
+        this.camera.position.copy(this.position);
+        this.controls.target.copy(this.target);
+        this.camera.lookAt(this.target);
+        this.camera.updateMatrixWorld()
+    }
+    // 获取当前相机视角
+    getCurView(){
+        let obj = {
+            camera: {},
+            target: {}
+        };
+
+        obj.camera.x = this.camera.position.x;
+        obj.camera.y = this.camera.position.y;
+        obj.camera.z = this.camera.position.z;
+        obj.target.x = this.controls.target.x;
+        obj.target.y = this.controls.target.y;
+        obj.target.z = this.controls.target.z;
+        return obj;
     }
 }

@@ -26,15 +26,6 @@ export const selectImgId = (selectedImgId) => {
 //     }
 // }
 
-// 面图像导入
-export const addFaceImg = (ID, faceImg) => {
-    return {
-        type: Designer.ADDFACEIMG,
-        ID,
-        faceImg,
-    }
-}
-
 // 更新纹理图
 export const updateUV = (UVMap) => (dispatch, getState) => {
     const { changeUV } = getState();

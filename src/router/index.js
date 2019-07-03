@@ -7,7 +7,7 @@ import Home from "@/pages/home/home";
 const Designer = asyncComponent(() => import("@/pages/designer/designer"));
 // import designer from '@/pages/designer/designer';
 
-// const Designer = asyncComponent(() => designer);
+const ProductDeatil = asyncComponent(() => import("@/pages/productDetail/productDetail"));
 
 class RouterIndex extends Component {
     render() {
@@ -17,6 +17,7 @@ class RouterIndex extends Component {
                     <Route path="/" exact render={() => ( <Redirect to="/home" /> )} />
                     <Route path="/home" component={Home} />
                     <Route path="/designer" component={Designer} />
+                    <Route path="/productDetail" component={ProductDeatil} />
                 </Switch>
             </BrowserRouter>
         );
