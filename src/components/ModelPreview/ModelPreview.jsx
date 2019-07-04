@@ -61,6 +61,7 @@ export default class ModelPreview extends Component {
         // 重置视角
         if (resetViewFlag) {
             this.resetView();
+            updateConfig(this.getCurView());
             resetOriginView(false);
         }
 
