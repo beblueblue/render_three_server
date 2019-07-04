@@ -4,7 +4,8 @@
   "description": "the project for zw demo",
   "main": "index.js",
   "scripts": {
-    "test": "node index.js",
+    "test": "node indexofJSON.js",
+    "testOBJ": "node indexofOBJ.js",
     "dev": "webpack --config webpack.config.dev.js",
     "start": "webpack-dev-server --config webpack.config.dev.js"
   },
