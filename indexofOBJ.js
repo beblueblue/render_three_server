@@ -28,14 +28,14 @@ const png = new PNG({ width: WIDTH, height: HEIGHT });
 
 const config = {
     camera: {
-        x: -25.15,
-        y: 24.28,
-        z: 18.63
+        x: 17.35,
+        y: 17.95,
+        z: 3.03
     },
     target: {
-        x: 0,
-        y: 0,
-        z: 0
+        x: 0.84,
+        y: -0.77,
+        z: 2.83
     }
 }
 // 相机视角
