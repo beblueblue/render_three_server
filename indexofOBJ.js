@@ -13,7 +13,7 @@ const canvas = document.createElement('canvas');
 const fs = require('fs');
 const path = require('path');
 const THREE = require('three');
-const OBJLoader = require('./src/common/loaders/OBJLoader');
+const OBJLoader = require('./src/common/loaders/ObjLoader');
 const PNG = require('pngjs').PNG;
 const gl = require('gl')(WIDTH, HEIGHT, {
     preserveDrawingBuffer: true,
@@ -22,7 +22,8 @@ const gl = require('gl')(WIDTH, HEIGHT, {
 
 
 const outPath = './src/common/img/output/out-CUP.png';
-const backgroundImg = './src/static/imgs/cupMap-demo.png';
+// const backgroundImg = './src/static/imgs/cupMap-demo.png';
+const backgroundImg = './src/static/imgs/multi-cupMap.png';
 const modelPath = './src/static/models/cupModel.obj';
 const png = new PNG({ width: WIDTH, height: HEIGHT });
 

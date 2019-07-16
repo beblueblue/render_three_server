@@ -196,7 +196,7 @@ class UVandDesign extends Component {
             {
                 name: 'A',
                 id: 1,
-                img: '/img/print/p1.jpg',
+                img: '/static/imgs/strawberryMilk.png',
                 width: 300,
                 height: 300,
                 // 旋转角度
@@ -212,7 +212,7 @@ class UVandDesign extends Component {
             {
                 name: 'B',
                 id: 2,
-                img: '/img/print/p2.jpg',
+                img: '/static/imgs/water.jpg',
                 width: 800,
                 height: 300,
                 // 旋转角度
@@ -228,7 +228,7 @@ class UVandDesign extends Component {
             {
                 name: 'C',
                 id: 3,
-                img: '/img/print/p3.jpg',
+                img: '/static/imgs/birdGrenade.jpg',
                 width: 300,
                 height: 300,
                 // 旋转角度
