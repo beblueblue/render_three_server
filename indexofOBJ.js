@@ -13,7 +13,7 @@ const canvas = document.createElement('canvas');
 const fs = require('fs');
 const path = require('path');
 const THREE = require('three');
-const OBJLoader = require('./src/common/loaders/ObjLoader');
+const OBJLoader = require('./src/common/loaders/OBJLoader');
 const PNG = require('pngjs').PNG;
 const gl = require('gl')(WIDTH, HEIGHT, {
     preserveDrawingBuffer: true,
