@@ -41,7 +41,7 @@ Object.assign(MTLLoader.prototype, THREE.EventDispatcher.prototype, {
 
 //   },
   load(url, onLoad, onProgress, onError) {
-    // let scope = this;
+    let scope = this;
 
     // fs.readFile(url, 'utf-8', (error, data) =>{
     //     // 错误处理
@@ -57,15 +57,15 @@ Object.assign(MTLLoader.prototype, THREE.EventDispatcher.prototype, {
     //     }
     // });
     return new Promise((resolve, reject) => {
-        fs.readFile(url, 'utf-8', (err, data) => {
+        fs.readFile(url, 'utf-8', function(err, data) {
             if (err) {
                 reject(err)
             }
             console.log(`load mtl: ${url}`)
-            if ( this.manager.onLoad) {
-                this.manager.onLoad(url, data);
+            if ( scope.manager.onLoad) {
+              scope.manager.onLoad(url, data);
             }
-            resolve( this.parse(data) )
+            resolve( scope.parse(data) )
         })
     })
   },
@@ -495,29 +495,26 @@ MTLLoader.MaterialCreator.prototype = {
       }
 
     }
-    let exposeMaterial = null;
     // 不同的部件，用不同的材质模拟
     // switch(materialName) {
     //   case '发光球':
-    //     exposeMaterial = new THREE.MeshStandardMaterial( params );
+    //     this.materials[ materialName ] = new THREE.MeshStandardMaterial( params );
     //     break;
     //   case '金属球':
-    //     exposeMaterial = new THREE.MeshStandardMaterial( params );
+    //     this.materials[ materialName ] = new THREE.MeshStandardMaterial( params );
     //     break;
     //   case '布料':
-    //     exposeMaterial = new THREE.MeshStandardMaterial( params );
+    //     this.materials[ materialName ] = new THREE.MeshStandardMaterial( params );
     //     break;
     //   default :
-    //     exposeMaterial = new THREE.MeshStandardMaterial( params );
+    //     this.materials[ materialName ] = new THREE.MeshStandardMaterial( params );
     // }
     // this.materials[ materialName ] = new THREE.MeshPhongMaterial( params );
     // this.materials[ materialName ] = new THREE.MeshLambertMaterial( params );
     // this.materials[ materialName ] = new THREE.MeshBasicMaterial( params );
     // this.materials[ materialName ] = new THREE.MeshNormalMaterial( params );
-    console.log('create material')
     this.materials[ materialName ] = new THREE.MeshStandardMaterial( params );
     // this.materials[ materialName ] = new THREE.MeshPhysicalMaterial( params );
-    this.materials[ materialName ] = exposeMaterial
     return this.materials[ materialName ];
   },
 

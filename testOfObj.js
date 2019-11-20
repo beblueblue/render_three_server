@@ -11,14 +11,13 @@ const document = window.document;
 const canvas = document.createElement('canvas');
 
 const fs = require('fs');
-const path = require('path');
 const THREE = require('three');
 const OBJLoader = require('./src/common/loaders/OBJLoader_node');
 const MTLLoader = require('./src/common/loaders/MTLLoader_node');
 const PNG = require('pngjs').PNG;
 const gl = require('gl')(WIDTH, HEIGHT, {
     preserveDrawingBuffer: true,
-    antialias: true
+    antialias: true,
 });
 
 const png = new PNG({ width: WIDTH, height: HEIGHT });
@@ -132,8 +131,8 @@ class renderObject {
 
         // 异步任务
         Promise.all([
-            this.loadColorMap(2048, 2048),
-            this.loadNormalMap(2048, 2048),
+            this.loadColorMap(),
+            this.loadNormalMap(),
             this.loadModel(),
         ]).then(
             () => {
@@ -149,7 +148,6 @@ class renderObject {
         const { options, componentCache } = this
         const { canvas, gl } = options
         componentCache.renderer = new THREE.WebGLRenderer({
-            antialias: true,
             canvas: canvas,
             preserveDrawingBuffer: true,
             context: gl,
@@ -215,17 +213,16 @@ class renderObject {
      */
     async loadModel() {
         const {
-            options: { modelPath, mtlPath, scene, initModel },
+            options: { modelPath, mtlPath },
             componentCache,
         } = this
         const manager = new THREE.LoadingManager();
         const mtlLoaderCache = new MTLLoader( manager )
         const OBJLoaderCache = new OBJLoader( manager )
 
-        // const materials = await mtlLoaderCache.load( mtlPath )
-        // materials.preload();
-        // // materials.flatShading = false;
-        // OBJLoaderCache.setMaterials( materials )
+        const materials = await mtlLoaderCache.load( mtlPath )
+        materials.preload();
+        OBJLoaderCache.setMaterials( materials )
         componentCache.model = await OBJLoaderCache.load( modelPath )
     }
     /**
@@ -238,6 +235,7 @@ class renderObject {
             const texture = await _loadTexture(options.colorMapPath, ...arg);
             texture.magFilter = THREE.LinearFilter
             texture.minFilter = THREE.LinearMipMapLinearFilter
+            // texture.repeat.set( 5, 5 );
             componentCache.colorMap = texture;
         }
         catch (err) {
@@ -252,7 +250,9 @@ class renderObject {
 
         try {
             const texture = await _loadTexture(options.normalMapPath, ...arg);
-            
+            texture.magFilter = THREE.LinearFilter
+            texture.minFilter = THREE.LinearMipMapLinearFilter
+            // texture.repeat.set( 5, 5 );
             componentCache.normalMap = texture;
         }
         catch (err) {
@@ -265,7 +265,7 @@ class renderObject {
      * @param {Number} width 纹理宽度，默认为1024
      * @param {Number} height 纹理高度，默认为1024
      */
-    _loadTexture(path, width = 1024, height = 1024, format =  THREE.RGBAFormat) {
+    _loadTexture(path, format =  THREE.RGBAFormat) {
         // return new Promise((resolve, reject) => {
         //     fs.readFile(path, (err, data) => {
         //         if (err) {
@@ -293,6 +293,7 @@ class renderObject {
                 texture.flipY = true;
                 texture.unpackAlignment = 4;
                 texture.needsUpdate = true;
+                texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
                 console.log(`loaded texture: ${path}`)
                 resolve(texture)
             })
@@ -344,7 +345,7 @@ class renderObject {
                         // 法线贴图
                         child.material.normalMap = normalMap;
                         child.material.normalScale = new THREE.Vector2(0.2, 0.2);
-
+                        
 
                         // 将发光颜色设置成自身颜色，自身来着mtl的Kd
                         // child.material.emissive = child.material.color
@@ -365,7 +366,7 @@ class renderObject {
                     default :
                         child.material.map = colorMap
                 }
-                child.material.side = THREE.DoubleSide;
+                // child.material.side = THREE.DoubleSide;
             }
         })
         console.log('start render')
@@ -376,7 +377,6 @@ class renderObject {
                 magFilter: THREE.NearestFilter,
                 format: THREE.RGBAFormat
         })
-        console.log(model)
         scene.add( model );
         renderer.setRenderTarget(rtTexture);
         renderer.render(scene, camera);

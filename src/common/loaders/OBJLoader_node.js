@@ -6,8 +6,6 @@ const { LineBasicMaterial } = require('three');
 const { MeshPhongMaterial } = require('three');
 const { MultiMaterial } = require('three');
 const { Mesh } = require('three');
-const { SmoothShading } = require('three');
-const { FlatShading } = require('three');
 const { LineSegments } = require('three');
 const { LoaderUtils } = require('three');
 
@@ -54,7 +52,7 @@ class OBJLoader {
         let texturePath = this.texturePath && (typeof this.texturePath === 'string') 
             ? this.texturePath
             : LoaderUtils.extractUrlBase( url );
-        // let scope = this;
+        let scope = this;
 
         // fs.readFile(url, 'utf-8', (error, data) =>{
         //     // 错误处理
@@ -70,15 +68,15 @@ class OBJLoader {
         //     }
         // });
         return new Promise((resolve, reject) => {
-          fs.readFile(url, 'utf-8', (err, data) => {
+          fs.readFile(url, 'utf-8', function(err, data) {
               if (err) {
                   reject(err)
               }
               console.log(`load obj: ${url}`)
-              if ( this.manager.onLoad) {
-                  this.manager.onLoad(url, data);
+              if ( scope.manager.onLoad) {
+                scope.manager.onLoad(url, data);
               }
-              resolve( this.parse(data) )
+              resolve( scope.parse(data) )
           })
       })
     }
@@ -649,7 +647,7 @@ class OBJLoader {
               material.name = sourceMaterial.name;
             }
   
-            material.shading = sourceMaterial.smooth ? SmoothShading : FlatShading;
+            material.flatShading = sourceMaterial.smooth ? false : true;
   
             createdMaterials.push(material);
           }
