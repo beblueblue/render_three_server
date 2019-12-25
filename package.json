@@ -19,7 +19,7 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^0.19.0",
-    "copy-webpack-plugin": "^5.0.3",
+    "copy-webpack-plugin": "^5.1.1",
     "fabric": "^3.1.0",
     "font-awesome": "^4.7.0",
     "gl": "^4.3.3",
