@@ -1,6 +1,6 @@
 const startTime = Number(new Date());
-const WIDTH = 1024;
-const HEIGHT = 1024;
+const WIDTH = 1200;
+const HEIGHT = 1200;
 
 const { JSDOM } = require("jsdom");
 const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>', {
@@ -34,6 +34,7 @@ const lightIntensity = {
 const paramsCache = {
     gl,
     canvas,
+    png,
     WIDTH,
     HEIGHT,
     // 合成图片输出地址
@@ -114,8 +115,6 @@ class renderObject {
             colorMap: null,
             normalMap: null,
             envMap: null,
-            loadedNum: 0,
-            needLoadNum: 6,
             autoPointLight: null,
         }
     }
@@ -136,7 +135,6 @@ class renderObject {
             this.loadModel(),
         ]).then(
             () => {
-                const { colorMap, normalMap, model } = this.componentCache
                 this.initModel()
             }
         )
@@ -307,7 +305,11 @@ class renderObject {
      */
     initModel() {
         const { 
-            componentCache: { model, colorMap, cubeTexture, normalMap, renderer, camera, scene }
+            componentCache: { model, colorMap, cubeTexture, normalMap, renderer, camera, scene },
+            options: {
+                WIDTH,
+                HEIGHT,
+            }
         } = this
         model.traverse((child) => {
             if (child instanceof THREE.Mesh) {
@@ -389,7 +391,7 @@ class renderObject {
     exportImg(){
         const { 
             componentCache: { renderer, },
-            options: { WIDTH, HEIGHT, outPath, gl }
+            options: { WIDTH, HEIGHT, outPath, gl, png, }
         } = this
         const newGl = renderer.getContext()
 
